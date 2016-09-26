@@ -39,9 +39,9 @@
 		<dependency>
 			<groupId>de.fh_zwickau.informatik.sensor</groupId>
 			<artifactId>zway-lib</artifactId>
-			<version>0.1.1-SNAPSHOT</version>
+			<version>0.1.2-SNAPSHOT</version>
 			<scope>system</scope>
-			<systemPath>${basedir}/lib/zway-lib-0.1.1-SNAPSHOT.jar</systemPath>
+			<systemPath>${basedir}/lib/zway-lib-0.1.2-SNAPSHOT.jar</systemPath>
 		</dependency>
 	</dependencies>
 
@@ -117,7 +117,7 @@
 							<mainClass>de.fh_zwickau.informatik.sensor.App</mainClass>
 						</manifest>
                         <manifestEntries>
-                            <Class-Path>lib/zway-lib-0.1.1-SNAPSHOT.jar</Class-Path>
+                            <Class-Path>lib/zway-lib-0.1.2-SNAPSHOT.jar</Class-Path>
                         </manifestEntries>
 					</archive>
 
