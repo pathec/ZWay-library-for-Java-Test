@@ -15,7 +15,6 @@ import de.fh_zwickau.informatik.sensor.model.devicehistory.DeviceHistory;
 import de.fh_zwickau.informatik.sensor.model.devicehistory.DeviceHistoryList;
 import de.fh_zwickau.informatik.sensor.model.devices.Device;
 import de.fh_zwickau.informatik.sensor.model.devices.DeviceList;
-import de.fh_zwickau.informatik.sensor.model.devices.zwaveapi.ZWaveDevice;
 import de.fh_zwickau.informatik.sensor.model.instances.Instance;
 import de.fh_zwickau.informatik.sensor.model.instances.InstanceList;
 import de.fh_zwickau.informatik.sensor.model.locations.Location;
@@ -26,6 +25,8 @@ import de.fh_zwickau.informatik.sensor.model.notifications.Notification;
 import de.fh_zwickau.informatik.sensor.model.notifications.NotificationList;
 import de.fh_zwickau.informatik.sensor.model.profiles.Profile;
 import de.fh_zwickau.informatik.sensor.model.profiles.ProfileList;
+import de.fh_zwickau.informatik.sensor.model.zwaveapi.controller.ZWaveController;
+import de.fh_zwickau.informatik.sensor.model.zwaveapi.devices.ZWaveDevice;
 
 public class ZWayApiClient implements IZWayApiCallbacks {
 
@@ -60,7 +61,8 @@ public class ZWayApiClient implements IZWayApiCallbacks {
 
                 ZWaveDevice zwaveDevice = mZWayApi.getZWaveDevice(realDevice.getKey());
                 if (zwaveDevice != null) {
-                    System.out.println(">>> ZWave device name: " + zwaveDevice.getGivenName().getValue() + "\n");
+                    System.out.println(
+                            ">>> ZWave device name: " + zwaveDevice.getData().getGivenName().getValue() + "\n");
                 }
             }
         }
@@ -73,6 +75,14 @@ public class ZWayApiClient implements IZWayApiCallbacks {
             for (Instance instance : instanceList.getInstances()) {
                 System.out.println(">>> " + instance.getModuleId());
             }
+        }
+
+        // GetController Test
+        System.out.println("*** Get controller ***");
+
+        ZWaveController zwaveController = mZWayApi.getZWaveController();
+        if (zwaveController != null) {
+            System.out.println(zwaveController);
         }
 
         // GetDevices Test (Asynchron)
@@ -299,6 +309,12 @@ public class ZWayApiClient implements IZWayApiCallbacks {
 
     @Override
     public void putProfileResponse(Profile arg0) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void getZWaveControllerResponse(ZWaveController arg0) {
         // TODO Auto-generated method stub
 
     }
