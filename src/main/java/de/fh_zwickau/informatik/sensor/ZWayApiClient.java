@@ -63,6 +63,14 @@ public class ZWayApiClient implements IZWayApiCallbacks {
                 if (zwaveDevice != null) {
                     System.out.println(
                             ">>> ZWave device name: " + zwaveDevice.getData().getGivenName().getValue() + "\n");
+
+                    System.out.println(">>> Check command class ThermostatMode");
+
+                    if (!zwaveDevice.getInstances().get0().getCommandClasses().get64().getName().equals("")) {
+                        System.out.println(">>> Device has command class ThermostatMode");
+                    } else {
+                        System.out.println(">>> Command class ThermostatMode isn't defined for device.");
+                    }
                 }
             }
         }
@@ -86,20 +94,20 @@ public class ZWayApiClient implements IZWayApiCallbacks {
         }
 
         // GetDevices Test (Asynchron)
-        System.out.println("*** Get (virtual) devices asynchron ***");
-        mZWayApi.getDevices(new IZWayCallback<DeviceList>() {
-
-            @Override
-            public void onSuccess(DeviceList deviceList) {
-                for (Device device : deviceList.getDevices()) {
-                    System.out.println(">>> " + device.getDeviceId());
-                }
-
-                System.out.println();
-                System.out.println("Press any key to continue...");
-                System.out.println();
-            }
-        });
+        // System.out.println("*** Get (virtual) devices asynchron ***");
+        // mZWayApi.getDevices(new IZWayCallback<DeviceList>() {
+        //
+        // @Override
+        // public void onSuccess(DeviceList deviceList) {
+        // for (Device device : deviceList.getDevices()) {
+        // System.out.println(">>> " + device.getDeviceId());
+        // }
+        //
+        // System.out.println();
+        // System.out.println("Press any key to continue...");
+        // System.out.println();
+        // }
+        // });
 
         System.out.println();
         System.out.println("*** Finish ***");

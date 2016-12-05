@@ -22,6 +22,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Workspaces/EclipseOpenHAB/zway-lib-test/lib/zway-lib-0.1.4-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="C:/Workspaces/EclipseOpenHAB/ZWay-library-for-Java-Test/lib/zway-lib-0.1.7-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
