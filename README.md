@@ -38,3 +38,6 @@ which accompanies this distribution, and is available at
 http://www.eclipse.org/legal/epl-v10.html
 
 This project uses 3rd party tools. You can find the list of 3rd party tools including their authors and licenses [here](LICENSE-3RD-PARTY.txt).
+
+<br>
+<img src="doc/BMWi_4C_Gef_en.jpg" width="200">
