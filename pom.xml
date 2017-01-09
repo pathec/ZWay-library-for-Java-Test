@@ -35,13 +35,43 @@
 			<artifactId>slf4j-simple</artifactId>
 			<version>1.7.21</version>
 		</dependency>
+		
+		<dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-api</artifactId>
+            <version>9.3.12.v20160915</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-client</artifactId>
+            <version>9.3.12.v20160915</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-common</artifactId>
+            <version>9.3.12.v20160915</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-io</artifactId>
+            <version>9.3.12.v20160915</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+            <version>9.3.12.v20160915</version>
+        </dependency>
 
 		<dependency>
 			<groupId>de.fh_zwickau.informatik.sensor</groupId>
 			<artifactId>zway-lib</artifactId>
-			<version>0.1.4-SNAPSHOT</version>
+			<version>0.1.9-SNAPSHOT</version>
 			<scope>system</scope>
-			<systemPath>${basedir}/lib/zway-lib-0.1.4-SNAPSHOT.jar</systemPath>
+			<systemPath>${basedir}/lib/zway-lib-0.1.9-SNAPSHOT.jar</systemPath>
 		</dependency>
 	</dependencies>
 
@@ -117,7 +147,7 @@
 							<mainClass>de.fh_zwickau.informatik.sensor.App</mainClass>
 						</manifest>
                         <manifestEntries>
-                            <Class-Path>lib/zway-lib-0.1.4-SNAPSHOT.jar</Class-Path>
+                            <Class-Path>lib/zway-lib-0.1.9-SNAPSHOT.jar</Class-Path>
                         </manifestEntries>
 					</archive>
 

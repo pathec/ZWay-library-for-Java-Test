@@ -12,8 +12,8 @@ This project provides a test application for Z-Way library for Java. The applica
 - Install Maven if not already installed
 - Clone project and navigate with console to the root folder of the project
 - Build JAR file: `mvn package`
-- Run application: `java -jar ./target/zway-lib-test/app.jar ipAddress port protocol username password`
-- Example arguments: `192.168.2.1 8083 http admin admin` 
+- Run application: `java -jar ./target/zway-lib-test/app.jar ipAddress port protocol username password remoteId userRemote`
+- Example arguments: `192.168.2.1 8083 http admin admin 0 false` 
 
 ## Dependencies
 
@@ -25,6 +25,9 @@ This project provides a test application for Z-Way library for Java. The applica
 - Jetty :: Http Utility (org.eclipse.jetty:jetty-http:9.3.11.v20160721 - http://www.eclipse.org/jetty)
 - Jetty :: IO Utility (org.eclipse.jetty:jetty-io:9.3.11.v20160721 - http://www.eclipse.org/jetty)
 - Jetty :: Utilities (org.eclipse.jetty:jetty-util:9.3.11.v20160721 - http://www.eclipse.org/jetty)
+- Jetty :: WebSocket :: API (org.eclipse.jetty.websocket:websocket-api:9.3.12.v20160915 - http://www.eclipse.org/jetty)
+- Jetty :: WebSocket :: Client (org.eclipse.jetty.websocket:websocket-client:9.3.12.v20160915 - http://www.eclipse.org/jetty)
+- Jetty :: WebSocket :: Common (org.eclipse.jetty.websocket:websocket-common:9.3.12.v20160915 - http://www.eclipse.org/jetty)
 - SLF4J API Module (org.slf4j:slf4j-api:1.7.21 - http://www.slf4j.org)
 - SLF4J Simple Binding (org.slf4j:slf4j-simple:1.7.21 - http://www.slf4j.org)
 

@@ -8,6 +8,7 @@
  */
 package de.fh_zwickau.informatik.sensor;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -30,8 +31,10 @@ import de.fh_zwickau.informatik.sensor.model.zwaveapi.devices.ZWaveDevice;
 
 public class ZWayApiClient implements IZWayApiCallbacks {
 
-    public void runTest(String ipAddress, Integer port, String protocol, String username, String password) {
-        IZWayApi mZWayApi = new ZWayApiHttp(ipAddress, port, protocol, username, password, this);
+    public void runTest(String ipAddress, Integer port, String protocol, String username, String password,
+            Integer remoteId, Boolean useRemoteService) {
+        IZWayApi mZWayApi = new ZWayApiHttp(ipAddress, port, protocol, username, password, remoteId, useRemoteService,
+                this);
 
         // Login Test
         String sid = mZWayApi.getLogin();
@@ -77,6 +80,19 @@ public class ZWayApiClient implements IZWayApiCallbacks {
             }
         }
 
+        // GetNotifications Test
+        System.out.println();
+        System.out.println("*** Get notifications ***");
+
+        NotificationList notificationList = mZWayApi.getNotifications((int) ((new Date().getTime() / 1000) - (3600))); // Max.
+                                                                                                                       // 1
+                                                                                                                       // Hour
+        if (notificationList != null) {
+            for (Notification notification : notificationList.getNotifications()) {
+                System.out.println(">>> " + notification);
+            }
+        }
+
         // GetController Test
         System.out.println("*** Get controller ***");
 
@@ -86,20 +102,50 @@ public class ZWayApiClient implements IZWayApiCallbacks {
         }
 
         // GetDevices Test (Asynchron)
-        System.out.println("*** Get (virtual) devices asynchron ***");
-        mZWayApi.getDevices(new IZWayCallback<DeviceList>() {
+        // System.out.println("*** Get (virtual) devices asynchron ***");
+        // mZWayApi.getDevices(new IZWayCallback<DeviceList>() {
+        //
+        // @Override
+        // public void onSuccess(DeviceList deviceList) {
+        // for (Device device : deviceList.getDevices()) {
+        // System.out.println(">>> " + device.getDeviceId());
+        // }
+        // }
+        // });
 
-            @Override
-            public void onSuccess(DeviceList deviceList) {
-                for (Device device : deviceList.getDevices()) {
-                    System.out.println(">>> " + device.getDeviceId());
-                }
+        // System.out.println("*** Get device ***");
+        // mZWayApi.getZWaveDevice(4, new IZWayCallback<ZWaveDevice>() {
+        //
+        // @Override
+        // public void onSuccess(ZWaveDevice device) {
+        // System.out.println(device.getInstances().get0());
+        // }
+        // });
 
-                System.out.println();
-                System.out.println("Press any key to continue...");
-                System.out.println();
-            }
-        });
+        System.out.println();
+        System.out.println("*** WebSocket ***");
+
+        String protocolWebSocket = protocol.equals("http") ? "ws" : "wss";
+        IZWayApi mZWayApiWebsocket = new ZWayApiWebSocket(ipAddress, port, protocolWebSocket, username, password,
+                remoteId, useRemoteService, this, new IZWayApiWebSocketCallbacks() {
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        System.out.println("WebSocket error: " + throwable.getMessage());
+
+                    }
+
+                    @Override
+                    public void onConnect() {
+                        System.out.println("WebSocket connect");
+                    }
+
+                    @Override
+                    public void onClose() {
+                        System.out.println("WebSocket close.");
+                    }
+                });
+        ((ZWayApiWebSocket) mZWayApiWebsocket).connect();
 
         System.out.println();
         System.out.println("*** Finish ***");
@@ -316,6 +362,12 @@ public class ZWayApiClient implements IZWayApiCallbacks {
     @Override
     public void getZWaveControllerResponse(ZWaveController arg0) {
         // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void message(int arg0, String arg1) {
+        System.out.println("Z-Way API message: " + arg1 + "\n");
 
     }
 }
