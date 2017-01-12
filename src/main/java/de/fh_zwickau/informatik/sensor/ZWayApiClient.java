@@ -8,155 +8,143 @@
  */
 package de.fh_zwickau.informatik.sensor;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import static de.fh_zwickau.informatik.sensor.ZWayConstants.*;
 
-import de.fh_zwickau.informatik.sensor.model.devicehistory.DeviceHistory;
-import de.fh_zwickau.informatik.sensor.model.devicehistory.DeviceHistoryList;
-import de.fh_zwickau.informatik.sensor.model.devices.Device;
-import de.fh_zwickau.informatik.sensor.model.devices.DeviceList;
-import de.fh_zwickau.informatik.sensor.model.instances.Instance;
-import de.fh_zwickau.informatik.sensor.model.instances.InstanceList;
-import de.fh_zwickau.informatik.sensor.model.locations.Location;
-import de.fh_zwickau.informatik.sensor.model.locations.LocationList;
-import de.fh_zwickau.informatik.sensor.model.modules.ModuleList;
-import de.fh_zwickau.informatik.sensor.model.namespaces.NamespaceList;
-import de.fh_zwickau.informatik.sensor.model.notifications.Notification;
-import de.fh_zwickau.informatik.sensor.model.notifications.NotificationList;
-import de.fh_zwickau.informatik.sensor.model.profiles.Profile;
-import de.fh_zwickau.informatik.sensor.model.profiles.ProfileList;
-import de.fh_zwickau.informatik.sensor.model.zwaveapi.controller.ZWaveController;
-import de.fh_zwickau.informatik.sensor.model.zwaveapi.devices.ZWaveDevice;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpCookie;
+import java.net.URLEncoder;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
-public class ZWayApiClient implements IZWayApiCallbacks {
+import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.http.HttpStatus;
 
-    public void runTest(String ipAddress, Integer port, String protocol, String username, String password,
-            Integer remoteId, Boolean useRemoteService) {
-        IZWayApi mZWayApi = new ZWayApiHttp(ipAddress, port, protocol, username, password, remoteId, useRemoteService,
-                this);
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 
-        // Login Test
-        String sid = mZWayApi.getLogin();
-        System.out.println("*** Get login ***");
-        if (sid != null) {
-            System.out.println(">>> " + sid + "\n");
-        } else {
-            return;
+import de.fh_zwickau.informatik.sensor.model.devices.DeviceCommand;
+import de.fh_zwickau.informatik.sensor.model.devices.types.SwitchBinary;
+import de.fh_zwickau.informatik.sensor.model.login.LoginForm;
+
+public class ZWayApiClient {
+
+    public void runTest(String ipAddress, Integer port, String protocol, String username, String password)
+            throws InterruptedException, TimeoutException, ExecutionException {
+
+        HttpClient httpClient = new HttpClient();
+
+        /**
+         * Start HTTP client
+         */
+        try {
+            httpClient.start();
+        } catch (Exception e) {
+            System.out.println("Can not start HttpClient: " + e.getMessage());
+            System.exit(-1);
         }
 
-        // GetDevices Test
-        System.out.println("*** Get (virtual) devices ***");
+        /**
+         * Login
+         */
+        LoginForm loginForm = new LoginForm(true, username, password, false, 1);
 
-        DeviceList deviceList = mZWayApi.getDevices();
-        if (deviceList != null) {
-            for (Device device : deviceList.getDevices()) {
-                System.out.println(">>> " + device.getDeviceId());
-            }
+        Request loginRequest = httpClient
+                .newRequest(protocol + "://" + ipAddress + ":" + port + "/ZAutomation/api/v1/" + PATH_LOGIN)
+                .method(HttpMethod.POST).header(HttpHeader.ACCEPT, "application/json")
+                .header(HttpHeader.CONTENT_TYPE, "application/json")
+                .content(new StringContentProvider(new Gson().toJson(loginForm)), "application/json");
 
-            System.out.println();
+        ContentResponse loginResponse = loginRequest.send();
 
-            System.out.println("*** Get devices group by node id ***");
-
-            for (Map.Entry<Integer, List<Device>> realDevice : deviceList.getDevicesGroupByNodeId().entrySet()) {
-                System.out.println(">>> Node ID: " + realDevice.getKey());
-                System.out.println(">>> Devices: " + realDevice.getValue().size() + " associated virtual devices");
-
-                ZWaveDevice zwaveDevice = mZWayApi.getZWaveDevice(realDevice.getKey());
-                if (zwaveDevice != null) {
-                    System.out.println(
-                            ">>> ZWave device name: " + zwaveDevice.getData().getGivenName().getValue() + "\n");
-
-                    System.out.println(">>> Check command class ThermostatMode");
-
-                    if (!zwaveDevice.getInstances().get0().getCommandClasses().get64().getName().equals("")) {
-                        System.out.println(">>> Device has command class ThermostatMode");
-                    } else {
-                        System.out.println(">>> Command class ThermostatMode isn't defined for device.");
-                    }
-                }
-            }
+        if (loginResponse.getStatus() != HttpStatus.OK_200) {
+            System.out.println("Login request failed: " + loginResponse.getStatus() + " " + loginResponse.getReason());
+            System.exit(-1);
         }
 
-        // GetInstances Test
-        System.out.println("*** Get instances ***");
+        String zwaySessionId = null;
+        try {
+            JsonObject responseDataAsJson = new Gson().fromJson(loginResponse.getContentAsString(), JsonObject.class)
+                    .get("data").getAsJsonObject();
 
-        InstanceList instanceList = mZWayApi.getInstances();
-        if (instanceList != null) {
-            for (Instance instance : instanceList.getInstances()) {
-                System.out.println(">>> " + instance.getModuleId());
-            }
+            zwaySessionId = responseDataAsJson.get("sid").getAsString(); // extract SID field
+        } catch (JsonParseException e) {
+            System.out.println("Login request failed: " + e.getMessage());
+            System.exit(-1);
         }
 
-        // GetNotifications Test
-        System.out.println();
-        System.out.println("*** Get notifications ***");
-
-        NotificationList notificationList = mZWayApi.getNotifications((int) ((new Date().getTime() / 1000) - (3600))); // Max.
-                                                                                                                       // 1
-                                                                                                                       // Hour
-        if (notificationList != null) {
-            for (Notification notification : notificationList.getNotifications()) {
-                System.out.println(">>> " + notification);
-            }
+        if (zwaySessionId == null) {
+            System.out.println("Authentication failed!");
+            System.exit(-1);
         }
 
-        // GetController Test
-        System.out.println("*** Get controller ***");
+        /**
+         * Device
+         */
 
-        ZWaveController zwaveController = mZWayApi.getZWaveController();
-        if (zwaveController != null) {
-            System.out.println(zwaveController);
+        String deviceId = ""; // TODO
+
+        Request deviceRequest = httpClient
+                .newRequest(
+                        protocol + "://" + ipAddress + ":" + port + "/ZAutomation/api/v1/" + PATH_DEVICES + deviceId)
+                .method(HttpMethod.GET).header(HttpHeader.ACCEPT, "application/json")
+                .header(HttpHeader.CONTENT_TYPE, "application/json")
+                .cookie(new HttpCookie("ZWAYSession", zwaySessionId));
+
+        ContentResponse deviceResponse = deviceRequest.send();
+
+        if (deviceResponse.getStatus() != HttpStatus.OK_200) {
+            System.out
+                    .println("Device request failed: " + deviceResponse.getStatus() + " " + deviceResponse.getReason());
+            System.exit(-1);
         }
 
-        // GetDevices Test (Asynchron)
-        // System.out.println("*** Get (virtual) devices asynchron ***");
-        // mZWayApi.getDevices(new IZWayCallback<DeviceList>() {
-        //
-        // @Override
-        // public void onSuccess(DeviceList deviceList) {
-        // for (Device device : deviceList.getDevices()) {
-        // System.out.println(">>> " + device.getDeviceId());
-        // }
-        // }
-        // });
+        SwitchBinary device = null;
+        try {
+            // Response -> String -> Json -> extract data field
+            JsonObject deviceAsJson = new Gson().fromJson(deviceResponse.getContentAsString(), JsonObject.class)
+                    .get("data").getAsJsonObject();
 
-        // System.out.println("*** Get device ***");
-        // mZWayApi.getZWaveDevice(4, new IZWayCallback<ZWaveDevice>() {
-        //
-        // @Override
-        // public void onSuccess(ZWaveDevice device) {
-        // System.out.println(device.getInstances().get0());
-        // }
-        // });
+            device = new Gson().fromJson(deviceAsJson, SwitchBinary.class);
+            device.setCommandHandler(null); // !!! Don't call device command's, for example: device.on()
 
-        System.out.println();
-        System.out.println("*** WebSocket ***");
+        } catch (JsonParseException e) {
+            System.out.println("Device request failed: " + e.getMessage());
+            System.exit(-1);
+        }
 
-        String protocolWebSocket = protocol.equals("http") ? "ws" : "wss";
-        IZWayApi mZWayApiWebsocket = new ZWayApiWebSocket(ipAddress, port, protocolWebSocket, username, password,
-                remoteId, useRemoteService, this, new IZWayApiWebSocketCallbacks() {
+        if (device == null) {
+            System.out.println("Device request failed!");
+            System.exit(-1);
+        }
 
-                    @Override
-                    public void onError(Throwable throwable) {
-                        System.out.println("WebSocket error: " + throwable.getMessage());
+        /**
+         * Device Command (on/off for binary switch)
+         */
+        if (device != null) {
+            DeviceCommand command = new DeviceCommand(device.getDeviceId(), "off", null);
 
-                    }
+            System.out.println(protocol + "://" + ipAddress + ":" + port + "/ZAutomation/api/v1/"
+                    + buildGetDeviceCommandPath(command));
 
-                    @Override
-                    public void onConnect() {
-                        System.out.println("WebSocket connect");
-                    }
+            // TODO HTTP request
+        }
 
-                    @Override
-                    public void onClose() {
-                        System.out.println("WebSocket close.");
-                    }
-                });
-        ((ZWayApiWebSocket) mZWayApiWebsocket).connect();
-
-        System.out.println();
-        System.out.println("*** Finish ***");
+        /**
+         * Stop HTTP client
+         */
+        try {
+            httpClient.stop();
+        } catch (Exception e) {
+            System.out.println("Unable to stop HttpClient: " + e.getMessage());
+        }
 
         try {
             System.in.read();
@@ -166,216 +154,29 @@ public class ZWayApiClient implements IZWayApiCallbacks {
         }
     }
 
-    @Override
-    public void apiError(String arg0, boolean arg1) {
-        System.out.println("Z-Way API error: " + arg0 + "\n");
-    }
-
-    @Override
-    public void authenticationError() {
-        System.out.println("Z-Way API authentication error\n");
-    }
-
-    @Override
-    public void responseFormatError(String arg0, boolean arg1) {
-        System.out.println("Z-Way API response format error: " + arg0 + "\n");
-    }
-
-    @Override
-    public void deleteInstanceResponse(boolean arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void deleteLocationResponse(boolean arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void deleteProfileResponse(boolean arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getDeviceCommandResponse(String arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getDeviceHistoriesResponse(DeviceHistoryList arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getDeviceHistoryResponse(DeviceHistory arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getDeviceResponse(Device arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getDevicesResponse(DeviceList arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getInstanceResponse(Instance arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getInstancesResponse(InstanceList arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getLocationResponse(Location arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getLocationsResponse(LocationList arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getLoginResponse(String arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getModulesResponse(ModuleList arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getNamespacesResponse(NamespaceList arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getNotificationResponse(Notification arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getNotificationsResponse(NotificationList arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getProfileResponse(Profile arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getProfilesResponse(ProfileList arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getRestartResponse(Boolean arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getStatusResponse(String arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getZWaveDeviceResponse(ZWaveDevice arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void httpStatusError(int arg0, String arg1, boolean arg2) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void postDeviceResponse(Device arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void postInstanceResponse(Instance arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void postLocationResponse(Location arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void postProfileResponse(Profile arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void putInstanceResponse(Instance arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void putLocationResponse(Location arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void putNotificationResponse(Notification arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void putProfileResponse(Profile arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void getZWaveControllerResponse(ZWaveController arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void message(int arg0, String arg1) {
-        System.out.println("Z-Way API message: " + arg1 + "\n");
-
+    private String buildGetDeviceCommandPath(DeviceCommand command) {
+        String path = StringUtils.replace(PATH_DEVICES_COMMAND, "{vDevName}", command.getDeviceId());
+        path = StringUtils.replace(path, "{command}", command.getCommand());
+
+        if (command.getParams() != null) {
+            path += "?";
+
+            Integer index = 0;
+            for (Entry<String, String> entry : command.getParams().entrySet()) {
+                if (index > 0) {
+                    path += "&";
+                }
+                try {
+                    path += URLEncoder.encode(entry.getKey(), "UTF-8") + "="
+                            + URLEncoder.encode(entry.getValue(), "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    System.out.println("Device command parameter invalid: " + e.getMessage());
+                    return null;
+                }
+                index++;
+            }
+        }
+
+        return path;
     }
 }

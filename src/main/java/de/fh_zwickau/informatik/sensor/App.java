@@ -8,6 +8,9 @@
  */
 package de.fh_zwickau.informatik.sensor;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 public class App {
 
     public static void main(String[] args) {
@@ -15,13 +18,19 @@ public class App {
 
         try {
             Integer port = Integer.parseInt(args[1]);
-            Integer remoteId = Integer.parseInt(args[5]);
-            Boolean useRemoteService = false;
-            if (args[6].equals("true")) {
-                useRemoteService = true;
-            }
 
-            client.runTest(args[0], port, args[2], args[3], args[4], remoteId, useRemoteService);
+            try {
+                client.runTest(args[0], port, args[2], args[3], args[4]);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (TimeoutException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         } catch (ArrayIndexOutOfBoundsException e0) {
             System.out.println("Error occured: wrong arguments");
             System.out.println("Possible arguments: ipAddress port protocol username password remoteId userRemote");
