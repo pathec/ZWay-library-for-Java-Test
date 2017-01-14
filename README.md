@@ -1,19 +1,18 @@
-# Z-Way library for Java - Test
+# Z-Way library for Java - Test (Model only)
 
 This project provides a test application for Z-Way library for Java. The application doesn't modify any Z-Way configuration or device setup. Only the following GET request will be performed:
 
 - GET login
-- GET instances
-- GET devices (in synchronous and asynchronous way)
-- GET Z-Wave device
+- GET device
+- GET device command
 
 ## Usage
 
 - Install Maven if not already installed
 - Clone project and navigate with console to the root folder of the project
 - Build JAR file: `mvn package`
-- Run application: `java -jar ./target/zway-lib-test/app.jar ipAddress port protocol username password remoteId userRemote`
-- Example arguments: `192.168.2.1 8083 http admin admin 0 false` 
+- Run application: `java -jar ./target/zway-lib-test/app.jar ipAddress port protocol username password`
+- Example arguments: `192.168.2.1 8083 http admin admin` 
 
 ## Dependencies
 

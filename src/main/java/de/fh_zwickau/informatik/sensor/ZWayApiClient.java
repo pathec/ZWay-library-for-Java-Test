@@ -83,6 +83,8 @@ public class ZWayApiClient {
         if (zwaySessionId == null) {
             System.out.println("Authentication failed!");
             System.exit(-1);
+        } else {
+            System.out.println("Successfully authenticated: " + zwaySessionId);
         }
 
         /**
@@ -92,8 +94,8 @@ public class ZWayApiClient {
         String deviceId = ""; // TODO
 
         Request deviceRequest = httpClient
-                .newRequest(
-                        protocol + "://" + ipAddress + ":" + port + "/ZAutomation/api/v1/" + PATH_DEVICES + deviceId)
+                .newRequest(protocol + "://" + ipAddress + ":" + port + "/ZAutomation/api/v1/" + PATH_DEVICES + "/"
+                        + deviceId)
                 .method(HttpMethod.GET).header(HttpHeader.ACCEPT, "application/json")
                 .header(HttpHeader.CONTENT_TYPE, "application/json")
                 .cookie(new HttpCookie("ZWAYSession", zwaySessionId));
@@ -123,6 +125,8 @@ public class ZWayApiClient {
         if (device == null) {
             System.out.println("Device request failed!");
             System.exit(-1);
+        } else {
+            System.out.println("Device successfully loaded: " + device.toString());
         }
 
         /**
@@ -131,10 +135,38 @@ public class ZWayApiClient {
         if (device != null) {
             DeviceCommand command = new DeviceCommand(device.getDeviceId(), "off", null);
 
-            System.out.println(protocol + "://" + ipAddress + ":" + port + "/ZAutomation/api/v1/"
-                    + buildGetDeviceCommandPath(command));
+            String message = null;
 
-            // TODO HTTP request
+            Request deviceCommandRequest = httpClient
+                    .newRequest(protocol + "://" + ipAddress + ":" + port + "/ZAutomation/api/v1/"
+                            + buildGetDeviceCommandPath(command))
+                    .method(HttpMethod.GET).header(HttpHeader.ACCEPT, "application/json")
+                    .header(HttpHeader.CONTENT_TYPE, "application/json")
+                    .cookie(new HttpCookie("ZWAYSession", zwaySessionId));
+
+            ContentResponse deviceCommandResponse = deviceCommandRequest.send();
+
+            if (deviceCommandResponse.getStatus() != HttpStatus.OK_200) {
+                System.out.println("Device command request failed: " + deviceCommandResponse.getStatus() + " "
+                        + deviceCommandResponse.getReason());
+                System.exit(-1);
+            }
+
+            try {
+                // Response -> String -> Json -> extract data field
+                message = new Gson().fromJson(deviceCommandResponse.getContentAsString(), JsonObject.class)
+                        .get("message").getAsString();
+            } catch (JsonParseException e) {
+                System.out.println("Device request failed: " + e.getMessage());
+                System.exit(-1);
+            }
+
+            if (message == null) {
+                System.out.println("Device command request failed!");
+                System.exit(-1);
+            } else {
+                System.out.println("Device command successfully performed: " + message);
+            }
         }
 
         /**
