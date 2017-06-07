@@ -6,6 +6,15 @@ This project provides a test application for Z-Way library for Java. The applica
 - GET instances
 - GET devices (in synchronous and asynchronous way)
 - GET Z-Wave device
+- GET icons
+- GET notifications
+- GET profiles
+- GET current profile
+- GET device histories
+- GET controller
+- POST instance
+- POST icon
+- initialize WebSocket connection
 
 ## Usage
 

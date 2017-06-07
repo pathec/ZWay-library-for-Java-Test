@@ -8,6 +8,9 @@
  */
 package de.fh_zwickau.informatik.sensor;
 
+import java.io.File;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -16,8 +19,12 @@ import de.fh_zwickau.informatik.sensor.model.devicehistory.DeviceHistory;
 import de.fh_zwickau.informatik.sensor.model.devicehistory.DeviceHistoryList;
 import de.fh_zwickau.informatik.sensor.model.devices.Device;
 import de.fh_zwickau.informatik.sensor.model.devices.DeviceList;
+import de.fh_zwickau.informatik.sensor.model.icons.Icon;
+import de.fh_zwickau.informatik.sensor.model.icons.IconList;
 import de.fh_zwickau.informatik.sensor.model.instances.Instance;
 import de.fh_zwickau.informatik.sensor.model.instances.InstanceList;
+import de.fh_zwickau.informatik.sensor.model.instances.dummydevice.DummyDevice;
+import de.fh_zwickau.informatik.sensor.model.instances.dummydevice.DummyDeviceParams;
 import de.fh_zwickau.informatik.sensor.model.locations.Location;
 import de.fh_zwickau.informatik.sensor.model.locations.LocationList;
 import de.fh_zwickau.informatik.sensor.model.modules.ModuleList;
@@ -45,13 +52,61 @@ public class ZWayApiClient implements IZWayApiCallbacks {
             return;
         }
 
+        // GetIcons Test
+        testGetIcons(mZWayApi);
+
         // GetDevices Test
+        testGetDevices(mZWayApi);
+
+        // GetInstances Test
+        testGetInstances(mZWayApi);
+
+        // GetNotifications Test
+        testGetNotifications(mZWayApi);
+
+        // GetProfiles Test
+        testGetProfiles(mZWayApi);
+
+        // GetCurrentProfile Test
+        testGetCurrentProfile(mZWayApi);
+
+        // GetDeviceHistories Test
+        testGetDeviceHistories(mZWayApi);
+
+        // GetController Test
+        testGetController(mZWayApi);
+
+        // PostInstance Test
+        // testPostInstance(mZWayApi);
+
+        // PostIcon Test
+        // testPostIcon(mZWayApi);
+
+        // GetDevices Test (Asynchron)
+        // testGetDevicesAsync(mZWayApi);
+
+        // Initialize WebSocket Connection
+        // initWebSocket(ipAddress, port, protocol, username, password, remoteId, useRemoteService);
+
+        System.out.println();
+        System.out.println("*** Finish ***");
+
+        try {
+            System.in.read();
+            System.exit(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void testGetDevices(IZWayApi mZWayApi) {
         System.out.println("*** Get (virtual) devices ***");
 
         DeviceList deviceList = mZWayApi.getDevices();
         if (deviceList != null) {
-            for (Device device : deviceList.getDevices()) {
-                System.out.println(">>> " + device.getDeviceId());
+            for (Device device : deviceList.getAllDevices()) {
+                System.out.println();
+                System.out.println(">>> " + device.toString());
             }
 
             System.out.println();
@@ -67,18 +122,32 @@ public class ZWayApiClient implements IZWayApiCallbacks {
                     System.out.println(
                             ">>> ZWave device name: " + zwaveDevice.getData().getGivenName().getValue() + "\n");
 
-                    System.out.println(">>> Check command class ThermostatMode");
+                    // System.out.println(">>> Check command class ThermostatMode");
 
-                    if (!zwaveDevice.getInstances().get0().getCommandClasses().get64().getName().equals("")) {
-                        System.out.println(">>> Device has command class ThermostatMode");
-                    } else {
-                        System.out.println(">>> Command class ThermostatMode isn't defined for device.");
-                    }
+                    // if (!zwaveDevice.getInstances().get0().getCommandClasses().get64().getName().equals("")) {
+                    // System.out.println(">>> Device has command class ThermostatMode");
+                    // } else {
+                    // System.out.println(">>> Command class ThermostatMode isn't defined for device.");
+                    // }
                 }
             }
         }
+    }
 
-        // GetInstances Test
+    private void testGetDevicesAsync(IZWayApi mZWayApi) {
+        System.out.println("*** Get (virtual) devices asynchron ***");
+        mZWayApi.getDevices(new IZWayCallback<DeviceList>() {
+
+            @Override
+            public void onSuccess(DeviceList deviceList) {
+                for (Device device : deviceList.getDevices()) {
+                    System.out.println(">>> " + device.getDeviceId());
+                }
+            }
+        });
+    }
+
+    private void testGetInstances(IZWayApi mZWayApi) {
         System.out.println("*** Get instances ***");
 
         InstanceList instanceList = mZWayApi.getInstances();
@@ -87,50 +156,123 @@ public class ZWayApiClient implements IZWayApiCallbacks {
                 System.out.println(">>> " + instance.getModuleId());
             }
         }
+    }
 
-        // GetNotifications Test
-        System.out.println();
+    private void testGetNotifications(IZWayApi mZWayApi) {
         System.out.println("*** Get notifications ***");
 
-        NotificationList notificationList = mZWayApi.getNotifications((int) ((new Date().getTime() / 1000) - (3600))); // Max.
-                                                                                                                       // 1
-                                                                                                                       // Hour
+        NotificationList notificationList = mZWayApi.getNotifications(new Date().getTime() - (3600 * 12 * 1000)); // 12
+                                                                                                                  // hours
         if (notificationList != null) {
             for (Notification notification : notificationList.getNotifications()) {
                 System.out.println(">>> " + notification);
             }
         }
+    }
 
-        // GetController Test
+    private void testGetProfiles(IZWayApi mZWayApi) {
+        System.out.println("*** Get profiles ***");
+
+        ProfileList profileList = mZWayApi.getProfiles();
+        if (profileList != null) {
+            for (Profile profile : profileList.getProfiles()) {
+                System.out.println(">>> " + profile);
+            }
+        }
+    }
+
+    private void testGetCurrentProfile(IZWayApi mZWayApi) {
+        System.out.println("*** Get current profile ***");
+
+        Profile currentProfile = mZWayApi.getCurrentProfile();
+        if (currentProfile != null) {
+            System.out.println(">>> " + currentProfile);
+        }
+    }
+
+    private void testGetDeviceHistories(IZWayApi mZWayApi) {
+        System.out.println("*** Get device histores ***");
+
+        DeviceHistoryList deviceHistoryList = mZWayApi.getDeviceHistories();
+        if (deviceHistoryList != null) {
+            for (DeviceHistory deviceHistory : deviceHistoryList.getDeviceHistoryList()) {
+                System.out.println(">>> " + deviceHistory);
+            }
+        }
+    }
+
+    private void testGetController(IZWayApi mZWayApi) {
         System.out.println("*** Get controller ***");
 
         ZWaveController zwaveController = mZWayApi.getZWaveController();
         if (zwaveController != null) {
             System.out.println(zwaveController);
         }
+    }
 
-        // GetDevices Test (Asynchron)
-        // System.out.println("*** Get (virtual) devices asynchron ***");
-        // mZWayApi.getDevices(new IZWayCallback<DeviceList>() {
-        //
-        // @Override
-        // public void onSuccess(DeviceList deviceList) {
-        // for (Device device : deviceList.getDevices()) {
-        // System.out.println(">>> " + device.getDeviceId());
-        // }
-        // }
-        // });
-
-        // System.out.println("*** Get device ***");
-        // mZWayApi.getZWaveDevice(4, new IZWayCallback<ZWaveDevice>() {
-        //
-        // @Override
-        // public void onSuccess(ZWaveDevice device) {
-        // System.out.println(device.getInstances().get0());
-        // }
-        // });
-
+    private void testGetIcons(IZWayApi mZWayApi) {
         System.out.println();
+        System.out.println("*** Get icons ***");
+
+        IconList iconList = mZWayApi.getIcons();
+        if (iconList != null) {
+            for (Icon icon : iconList.getIcons()) {
+                System.out.println(">>> " + icon);
+            }
+        }
+    }
+
+    private void testPostInstance(IZWayApi mZWayApi) {
+        System.out.println("*** Post instance ***");
+
+        DummyDevice dummyDevice = new DummyDevice();
+        dummyDevice.setTitle("Dummy Presence");
+        DummyDeviceParams params = new DummyDeviceParams();
+        params.setDeviceType("switchBinary");
+        dummyDevice.setParams(params);
+
+        Instance instance = mZWayApi.postInstance(dummyDevice);
+        if (instance != null) {
+            System.out.println();
+            System.out.println("New instance: " + instance.toString());
+
+            Device device = mZWayApi.getDevice(instance.getModuleId() + "_" + instance.getId());
+            System.out.println();
+            System.out.println(device);
+
+            device.getMetrics().setTitle("Patrick");
+
+            Device deviceUpdate = mZWayApi.putDevice(device);
+            System.out.println();
+            System.out.println(deviceUpdate);
+        }
+    }
+
+    private void testPostIcon(IZWayApi mZWayApi) {
+        System.out.println("*** Post icon ***");
+
+        final Class<?> referenceClass = ZWayApiClient.class;
+        final URL url = referenceClass.getProtectionDomain().getCodeSource().getLocation();
+
+        try {
+            final File jarPath = new File(url.toURI()).getParentFile();
+            System.out.println(jarPath);
+
+            File icon = new File(jarPath + "\\image.png");
+
+            if (!icon.exists()) {
+                System.out.println("File not found!");
+                System.exit(1);
+            }
+
+            String message = mZWayApi.postIcon(icon);
+            System.out.println(message);
+        } catch (final URISyntaxException e) {
+        }
+    }
+
+    private void initWebSocket(String ipAddress, Integer port, String protocol, String username, String password,
+            Integer remoteId, Boolean useRemoteService) {
         System.out.println("*** WebSocket ***");
 
         String protocolWebSocket = protocol.equals("http") ? "ws" : "wss";
@@ -140,7 +282,6 @@ public class ZWayApiClient implements IZWayApiCallbacks {
                     @Override
                     public void onError(Throwable throwable) {
                         System.out.println("WebSocket error: " + throwable.getMessage());
-
                     }
 
                     @Override
@@ -154,16 +295,6 @@ public class ZWayApiClient implements IZWayApiCallbacks {
                     }
                 });
         ((ZWayApiWebSocket) mZWayApiWebsocket).connect();
-
-        System.out.println();
-        System.out.println("*** Finish ***");
-
-        try {
-            System.in.read();
-            System.exit(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -320,7 +451,7 @@ public class ZWayApiClient implements IZWayApiCallbacks {
     }
 
     @Override
-    public void postDeviceResponse(Device arg0) {
+    public void putDeviceResponse(Device arg0) {
         // TODO Auto-generated method stub
 
     }
